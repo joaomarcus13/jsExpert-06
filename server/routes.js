@@ -5,6 +5,7 @@ import { logger } from './util.js';
 const {
   location,
   pages: { homeHTML, controllerHTML },
+  constants: { CONTENT_TYPE },
 } = config;
 const controller = new Controller();
 
@@ -29,6 +30,8 @@ async function routes(request, response) {
   //files
   if (method === 'GET') {
     const { stream, type } = await controller.getFileStream(url);
+    const contentType = CONTENT_TYPE[type];
+    if (contentType) response.writeHead(200, { 'Content-Type': contentType });
     return stream.pipe(response);
   }
 
@@ -36,12 +39,19 @@ async function routes(request, response) {
   return response.end();
 }
 
-function handleError(error) {
-  logger.error(error);
+function handleError(error, response) {
+  if (error.message.includes('ENOENT')) {
+    logger.warn(`asset not found ${error.message}`);
+    response.writeHead(404);
+    return response.end();
+  }
+  logger.error(`caught error on API ${error.message}`);
+  response.writeHead(500);
+  return response.end();
 }
 
 export function handler(request, response) {
   return routes(request, response).catch((error) => {
-    logger.error(error);
+    handleError(error, response);
   });
 }
