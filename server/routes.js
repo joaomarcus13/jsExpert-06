@@ -11,6 +11,7 @@ const controller = new Controller();
 
 async function routes(request, response) {
   const { method, url } = request;
+  console.log(`${method} ${url}`);
 
   if (method === 'GET' && url === '/') {
     response.writeHead(302, { Location: location.home });
@@ -24,6 +25,17 @@ async function routes(request, response) {
 
   if (method === 'GET' && url === '/controller') {
     const { stream } = await controller.getFileStream(controllerHTML);
+    return stream.pipe(response);
+  }
+
+  if (method === 'GET' && url.includes('/stream')) {
+    console.log(url);
+    const { stream, onClose } = controller.createClientStream();
+    request.once('close', onClose);
+    response.writeHead(200, {
+      'Content-Type': 'audio/mpeg',
+      'Accept-Ranges': 'bytes',
+    });
     return stream.pipe(response);
   }
 
