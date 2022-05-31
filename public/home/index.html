@@ -179,12 +179,12 @@
   <script>
     //prevent cache 
     console.log(Date.now());
-    // window.onload = () => {
-    //   const audio = document.getElementById("audio")
-    //   let source = audio.getElementsByTagName("source")[0]
-    //   console.log(source)
-    //   source.setAttribute('src', "/stream?id=" + Date.now())
-    // }
+    window.onload = () => {
+      const audio = document.getElementById("audio")
+      let source = audio.getElementsByTagName("source")[0]
+      console.log(source)
+      source.setAttribute('src', "/stream?id=" + Date.now())
+    }
   </script>
 </body>
 

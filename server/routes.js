@@ -7,11 +7,11 @@ const {
   pages: { homeHTML, controllerHTML },
   constants: { CONTENT_TYPE },
 } = config;
+import { once } from 'events';
 const controller = new Controller();
 
 async function routes(request, response) {
   const { method, url } = request;
-  console.log(`${method} ${url}`);
 
   if (method === 'GET' && url === '/') {
     response.writeHead(302, { Location: location.home });
@@ -29,7 +29,6 @@ async function routes(request, response) {
   }
 
   if (method === 'GET' && url.includes('/stream')) {
-    console.log(url);
     const { stream, onClose } = controller.createClientStream();
     request.once('close', onClose);
     response.writeHead(200, {
@@ -37,6 +36,14 @@ async function routes(request, response) {
       'Accept-Ranges': 'bytes',
     });
     return stream.pipe(response);
+  }
+
+  if (method === 'POST' && url === '/controller') {
+    const data = await once(request, 'data');
+    const item = JSON.parse(data);
+
+    const result = await controller.handleCommand(item);
+    return response.end(JSON.stringify(result));
   }
 
   //files

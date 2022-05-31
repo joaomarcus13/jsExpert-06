@@ -22,7 +22,6 @@ export class Service {
     this.currentBitRate = 0;
     this.throttleTransform = {};
     this.currentReadable = {};
-    this.startStreaming();
   }
 
   createClientStream() {
@@ -65,6 +64,7 @@ export class Service {
     return new Writable({
       write: (chunk, encoding, callback) => {
         for (const [key, stream] of this.clientStreams) {
+          //se o cliente desconectou
           if (stream.writableEnded) {
             this.clientStreams.delete(key);
             continue;
@@ -77,20 +77,24 @@ export class Service {
   }
 
   async startStreaming() {
-    logger.info(`Starting stream with bitrate ${this.currentSong}`);
-    this.currentBitRate =
-      (await this.getBitrate(this.currentSong)) / biteRateDivisor;
-    const bitrate = this.currentBitRate;
+    logger.info(`Starting stream with ${this.currentSong}`);
+
+    const bitrate = (await this.getBitrate(this.currentSong)) / biteRateDivisor;
+    this.currentBitRate = bitrate;
+
     this.throttleTransform = new Throttle(bitrate);
     const throttleTransform = this.throttleTransform;
-    const songReadable = (this.currentReadable = this.createFileStream(
-      this.currentSong
-    ));
+    const songReadable = this.createFileStream(this.currentSong);
+    this.currentReadable = songReadable;
     return streamsPromises.pipeline(
       songReadable,
       throttleTransform,
       this.broadCast()
     );
+  }
+
+  stopStreaming() {
+    this.throttleTransform?.end?.();
   }
 
   createFileStream(filename) {
